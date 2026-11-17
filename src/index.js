@@ -17,6 +17,7 @@ import {
   findingsCommentAdf,
   upgradeIssueFields,
 } from './core';
+import { safeFileName, sanitizeFindings } from './sanitize';
 
 const INVENTORY_LABEL = 'ai-stack';
 const TASK_LABEL = 'ai-stack-guard';
@@ -83,7 +84,8 @@ async function issueSources(issueKey, as) {
       console.warn(`Attachment ${att.id} on ${issueKey}: HTTP ${res.status}`);
       continue;
     }
-    sources.push({ file: `attachment ${att.filename}`, kind, text: await res.text() });
+    // Attachment names are chosen by whoever filed the issue: keep them to a short, plain token.
+    sources.push({ file: `attachment ${safeFileName(att.filename)}`, kind, text: await res.text() });
   }
   adfCodeBlocks(issue.fields.description).forEach((block, i) => {
     const kind = codeBlockKind(block.language, block.text);
@@ -95,7 +97,8 @@ async function issueSources(issueKey, as) {
 async function scanIssueFindings(issueKey, as) {
   const data = await loadFeed();
   const { issue, sources } = await issueSources(issueKey, as);
-  return { data, issue, sources, findings: scanSources(data, sources) };
+  // Results go to Rovo and outside MCP clients: strip prose from every value copied out of the issue.
+  return { data, issue, sources, findings: sanitizeFindings(scanSources(data, sources)) };
 }
 
 async function searchIssueKeys(jql, as, max) {
@@ -196,7 +199,10 @@ export async function checkComponent(payload) {
   return compactReport(data, [f], { query: { product, version: payload.version || null, platform: payload.platform || null } });
 }
 
-/** GET: every issue labelled ai-stack in a project, summarised. */
+/**
+ * GET: every issue labelled ai-stack in a project, summarised. Issue titles are left out on
+ * purpose: they are free text from whoever filed the issue, and the issue key is enough to link.
+ */
 export async function scanProject(payload) {
   const projectKey = contextProjectKey(payload);
   if (!projectKey) return { error: 'No project key. Give one, for example OPS.' };
@@ -212,7 +218,6 @@ export async function scanProject(payload) {
     const affected = r.findings.filter((f) => f.status === 'affected');
     issues.push({
       issueKey: key,
-      summary: r.issue.fields.summary,
       checked: r.findings.length,
       affected: affected.map((f) => ({ component: f.name, version: f.version, advisories: f.advisories.length, updateTo: f.upgradeTo, worst: f.advisories[0] && f.advisories[0].severity })),
       unpinned: r.findings.filter((f) => f.status === 'unpinned').map((f) => f.name),

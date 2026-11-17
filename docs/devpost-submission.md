@@ -30,8 +30,13 @@ puts the answer there.
   in this project need updates?" or "Is Ollama 0.33.1 safe?". It files findings only when asked.
 - **MCP tools.** `scan-issue`, `check-component` and `scan-project` are exposed through the Atlassian
   MCP server (`rovo:mcp`), so Claude, Cursor or any other MCP client can ask the same questions with
-  the user's own Jira permissions. A published `SKILL.md` teaches outside agents when and how to use
-  the tools, with a local fallback that needs no Jira.
+  the user's own Jira permissions. A published `SKILL.md`, listed on skills.sh, teaches outside agents
+  when and how to use the tools, with a local fallback that needs no Jira.
+- **Safe to hand to an agent.** Anyone who can file a ticket can write into it, so the tools return
+  structured findings, not issue prose. Every value copied out of an issue (attachment names, image
+  refs, requirement lines, versions) is cut to a short token with no spaces before an agent sees it,
+  `scan-project` returns issue keys instead of titles, and the only write action stays inside Jira,
+  behind Rovo's confirmation.
 - **Daily check.** It re-checks every issue labelled `ai-stack` each day and comments only about
   advisories it has not reported before. A new advisory becomes a Jira task the next morning, and
   nobody has to remember to re-scan.
@@ -45,6 +50,8 @@ puts the answer there.
   ranges, single affected versions, "last affected" entries for advisories with no fix yet, Windows-only
   advisories, and image tags such as `main-v1.74.0-stable`. It also understands CycloneDX purls
   (`pkg:docker`, `pkg:oci`, `pkg:pypi`, `pkg:npm`) and Jira's document format.
+- `src/sanitize.js` sits between the engine and every agent-facing result; its tests feed it
+  prompt-injection text through each input route.
 - The feed is curated by MV2 of Munim, Inc. with AI agents. Each entry records the affected range,
   whether it depends on an optional feature, and whether it was in OSV when checked.
 - **AI disclosure:** this project was made with AI agents working for MV2 of Munim, Inc.
@@ -54,6 +61,11 @@ puts the answer there.
 - Rovo is not available on free developer sites, so development used a Forge demo site.
 - Jira serves attachments through a redirect to its media host; the app asks for them directly so the
   bytes stay on the Jira API.
+- An agent that reads Jira issues reads text written by anyone who can file one. A security scanner
+  that can be talked into filing tickets would be worse than none, so the outside MCP tools are
+  read-only and their answers carry no free text from issues. A third-party audit of the first skill
+  release flagged exactly these two risks (indirect prompt injection, and an unpinned scanner
+  download); v0.1.2 fixes both.
 - Advisory data is messy: some fixes exist only for one release line, some advisories have no fixed
   release, and image tags rarely look like plain versions. The engine has unit tests for each of these
   cases.
@@ -84,6 +96,6 @@ raw.githubusercontent.com.
 ## Links
 
 - Repository (Apache-2.0): https://github.com/munimtechnologies/jira-ai-stack-guard
-- Agent skill: https://github.com/munimtechnologies/jira-ai-stack-guard/tree/main/skills/ai-stack-guard
+- Agent skill: https://skills.sh/munimtechnologies/jira-ai-stack-guard/ai-stack-guard
 - Advisory feed: https://github.com/munimtechnologies/ai-stack-advisories
 - Video: [YouTube link]

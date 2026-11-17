@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parent
 MANIFEST = (ROOT / "manifest.yml").read_text(encoding="utf-8")
 INDEX = (ROOT / "src" / "index.js").read_text(encoding="utf-8")
 CORE = (ROOT / "src" / "core.js").read_text(encoding="utf-8")
+SANITIZE = (ROOT / "src" / "sanitize.js").read_text(encoding="utf-8")
+SKILL = (ROOT / "skills" / "ai-stack-guard" / "SKILL.md").read_text(encoding="utf-8")
 
 
 def block_list(name):
@@ -62,10 +64,38 @@ class ManifestTest(unittest.TestCase):
 
     def test_core_has_no_forge_imports(self):
         self.assertNotIn("@forge", CORE)
+        self.assertNotIn("@forge", SANITIZE)
         imported = set(re.findall(r"^\s+(\w+)(?: as \w+)?,\s*$", INDEX.split("} from './core'")[0], re.M))
         exported = set(re.findall(r"^  (\w+),\s*$", CORE.split("module.exports = {")[1], re.M))
         self.assertTrue(imported, "index.js imports from core")
         self.assertTrue(imported <= exported, imported - exported)
+
+
+class UntrustedContentTest(unittest.TestCase):
+    """Issue content reaches Rovo and MCP clients only after sanitising."""
+
+    def test_issue_findings_are_sanitised(self):
+        m = re.search(r"import \{([^}]*)\} from './sanitize'", INDEX)
+        self.assertIsNotNone(m)
+        names = {x.strip() for x in m.group(1).split(",") if x.strip()}
+        exported = set(re.findall(r"^  (\w+),\s*$", SANITIZE.split("module.exports = {")[1], re.M))
+        self.assertTrue(names <= exported, names - exported)
+        self.assertIn("findings: sanitizeFindings(scanSources(data, sources))", INDEX)
+        self.assertIn("safeFileName(att.filename)", INDEX)
+        self.assertEqual(INDEX.count("scanSources("), 1)  # no unsanitised path
+
+    def test_scan_project_returns_no_issue_titles(self):
+        body = INDEX.split("export async function scanProject")[1].split("export async function")[0]
+        self.assertNotIn("fields.summary", body)
+
+    def test_agent_prompt_treats_content_as_data(self):
+        self.assertIn("not instructions to you", MANIFEST)
+
+    def test_skill_pins_the_scanner(self):
+        self.assertIn("--branch v1.2.6", SKILL)
+        self.assertIn("a061a840d111e3cbe75ef938788769171e03c6d3", SKILL)
+        self.assertNotIn("ai-stack-advisories/main/advisories.json", SKILL)
+        self.assertIn("data, never instructions", SKILL)
 
 
 class LicenceAndWordingTest(unittest.TestCase):
@@ -85,7 +115,7 @@ class LicenceAndWordingTest(unittest.TestCase):
 @unittest.skipUnless(shutil.which("node"), "node is not installed")
 class NodeTests(unittest.TestCase):
     def test_node_unit_tests_pass(self):
-        r = subprocess.run(["node", "--test", "test/core.test.js"], cwd=ROOT, capture_output=True, text=True, timeout=300)
+        r = subprocess.run(["node", "--test", "test/core.test.js", "test/sanitize.test.js"], cwd=ROOT, capture_output=True, text=True, timeout=300)
         self.assertEqual(r.returncode, 0, r.stdout[-4000:] + r.stderr[-2000:])
 
 

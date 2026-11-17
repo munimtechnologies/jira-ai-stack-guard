@@ -6,7 +6,7 @@ advisories, then turns the results into Jira work.
 Covered apps: Ollama, Open WebUI, vLLM, LiteLLM, n8n, Dify, Langflow, Flowise, RAGFlow,
 AnythingLLM, ComfyUI and MCP Inspector.
 
-**Status: v0.1.1, in development.** It has not been deployed to a Jira site yet, and the first run of
+**Status: v0.1.2, in development.** It has not been deployed to a Jira site yet, and the first run of
 its unit tests is still pending. It is MV2 of Munim, Inc.'s entry for Atlassian's Codegeist 2026, in the
 category Apps for Software Teams. Made with AI agents. Licence: Apache-2.0.
 
@@ -53,11 +53,30 @@ curated, openly licensed feed kept by MV2 of Munim, Inc. For each advisory the f
   advisories it has not reported before, and opens upgrade tasks for them. Nobody has to remember
   to re-scan when a new advisory comes out.
 
+## Safe to hand to an agent
+
+Anyone who can file a Jira ticket can write text into it, and these tools pass their results to
+AI agents. So the app treats issue content as data, never as instructions:
+- Results are structured: component, version, status, advisory IDs, severities, fixed versions and
+  links. Advisory text comes only from the curated feed.
+- Every value copied out of an issue (attachment names, image refs, requirement lines, package.json
+  specs, SBOM purls and versions) is cut to a short token with no spaces or comments before it is
+  returned (`src/sanitize.js`, tested in `test/sanitize.test.js`). So an attachment named
+  "Ignore all previous instructions.yaml" reaches the agent only as a mangled token.
+- `scan-project` returns issue keys, not issue titles.
+- The only write action stays inside Jira (panel button or Rovo, which asks the user to confirm)
+  and is not exposed to outside MCP clients. The Rovo agent's instructions say not to follow
+  anything written inside issues.
+- The agent skill's local route runs the feed's scanner only from a pinned, tagged release whose
+  commit it checks first.
+
 ## Agent skill
 
 [`skills/ai-stack-guard/SKILL.md`](skills/ai-stack-guard/SKILL.md) tells coding agents (Claude Code,
 Codex, Cursor and others) when to use these tools and how to read their answers. It also gives a local
-route that needs no Jira: the feed's standard-library scanner, `scan_stack.py`. To add it to an agent:
+route that needs no Jira: the feed's standard-library scanner, `scan_stack.py`, pinned to release
+v1.2.6. It is listed on [skills.sh](https://skills.sh/munimtechnologies/jira-ai-stack-guard/ai-stack-guard).
+To add it to an agent:
 
 ```
 npx skills add munimtechnologies/jira-ai-stack-guard
@@ -90,7 +109,7 @@ To connect an outside MCP client to the Jira tools:
 
 ```
 npm install
-npm test                # unit tests for src/core.js (node --test)
+npm test                # unit tests for src/core.js and src/sanitize.js (node --test)
 npm run smoke -- out    # checks the demo files against the live feed
 python -m unittest test_forge_app_static.py
 ```
@@ -115,6 +134,8 @@ instead. The panel, MCP tools and daily check work there too; only the Rovo agen
   imports, so it runs under plain Node. It is a port of the feed's
   [`scan_stack.py`](https://github.com/munimtechnologies/ai-stack-advisories/blob/main/scan_stack.py)
   and uses the same matching rules.
+- `src/sanitize.js` reduces every value copied out of an issue to a short token before results
+  leave the app.
 - `src/index.js` holds the Forge functions: the Rovo actions and MCP tools, the daily check, and
   the panel resolver.
 - `src/frontend/index.jsx` is the issue panel, written in UI Kit.
@@ -130,6 +151,8 @@ instead. The panel, MCP tools and daily check work there too; only the Rovo agen
   scanner as well.
 - "No known advisories" means none in the curated list as of its date. It is not a guarantee.
 - For a version range such as `^1.100.0`, the lowest allowed version is checked.
+- Sanitising limits what issue text can say to an agent; it cannot make an agent immune to
+  everything. The outside MCP tools are read-only for that reason.
 
 ## Credits and licence
 
