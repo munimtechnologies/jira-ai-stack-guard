@@ -1,0 +1,31 @@
+{
+  "checked": "2026-11-10",
+  "products": {
+    "ollama": { "name": "Ollama", "items": [
+      {"introduced": null, "fixed": "0.1.34", "kind": "server", "ids": ["CVE-2024-37032"], "severity": "HIGH", "summary": "Path traversal in model pull.", "url": "https://www.cve.org/CVERecord?id=CVE-2024-37032"},
+      {"introduced": "0.12.10", "fixed": "0.24.0", "kind": "windows", "ids": ["CVE-2026-42248"], "severity": "HIGH", "summary": "Windows auto-updater skips signature checks.", "url": "https://cert.pl/en/posts/2026/04/CVE-2026-42248/"},
+      {"introduced": "0.30.0", "fixed": "0.33.3", "kind": "server", "ids": ["CVE-2026-85180"], "severity": "HIGH", "summary": "SSRF through a malicious registry.", "url": "https://osv.dev/vulnerability/CVE-2026-85180"},
+      {"introduced": "0.34.2", "fixed": "0.35.0", "kind": "server", "ids": ["CVE-2026-103663"], "severity": "CRITICAL", "summary": "Path traversal in /api/pull.", "url": "https://cert.pl/en/posts/2026/10/CVE-2026-103663/"}
+    ]},
+    "openwebui": { "name": "Open WebUI", "items": [
+      {"introduced": "0.7.0", "fixed": "0.11.4", "kind": "server", "ids": ["GHSA-vpq8-f445-hcq7"], "severity": "HIGH", "inPublicDatabases": false, "summary": "Session token theft through community sharing.", "url": "https://github.com/open-webui/open-webui/security/advisories/GHSA-vpq8-f445-hcq7"},
+      {"introduced": "0.7.0", "fixed": "0.12.2", "kind": "feature", "ids": ["GHSA-3vvh-g22g-jq6r"], "severity": "MODERATE", "summary": "Webhook look-alike messages in channels.", "url": "https://github.com/open-webui/open-webui/security/advisories/GHSA-3vvh-g22g-jq6r"}
+    ]},
+    "litellm": { "name": "LiteLLM", "items": [
+      {"introduced": "1.82.7", "fixed": null, "only": ["1.82.7", "1.82.8"], "kind": "server", "ids": ["GHSA-5mg7-485q-xm76"], "severity": "CRITICAL", "summary": "Malicious releases on PyPI.", "url": "https://github.com/advisories/GHSA-5mg7-485q-xm76"}
+    ]},
+    "dify": { "name": "Dify", "items": [
+      {"introduced": null, "fixed": null, "lastAffected": "1.11.4", "kind": "server", "ids": ["CVE-2026-26023"], "severity": "HIGH", "summary": "DOM XSS in the web chat app.", "url": "https://github.com/langgenius/dify/security/advisories/GHSA-qqjx-5h5w-x5vj"}
+    ]},
+    "n8n": { "name": "n8n", "items": [
+      {"introduced": null, "fixed": "1.110.0", "kind": "server", "ids": ["CVE-2026-0001"], "severity": "LOW", "summary": "Example low advisory.", "url": "https://example.com/low"},
+      {"introduced": null, "fixed": "1.120.0", "kind": "server", "ids": ["CVE-2026-0002"], "severity": "CRITICAL", "summary": "Example critical advisory.", "url": "https://example.com/critical"}
+    ]},
+    "vllm": { "name": "vLLM", "items": [
+      {"introduced": null, "fixed": "0.32.0", "kind": "server", "ids": ["CVE-2026-115917"], "severity": "LOW", "summary": "Default CORS settings.", "url": "https://github.com/vllm-project/vllm/security/advisories/GHSA-vvpg-rrww-wpmh"}
+    ]},
+    "mcpinspector": { "name": "MCP Inspector", "items": [
+      {"introduced": null, "fixed": "0.14.1", "kind": "server", "ids": ["CVE-2025-49596"], "severity": "CRITICAL", "summary": "Unauthenticated RCE through the proxy.", "url": "https://github.com/advisories/GHSA-7f8r-222p-6f5g"}
+    ]}
+  }
+}

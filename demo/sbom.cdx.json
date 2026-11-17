@@ -1,0 +1,11 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": { "component": { "type": "application", "name": "support-assistant" } },
+  "components": [
+    { "type": "container", "name": "ragflow", "purl": "pkg:docker/infiniflow/ragflow@v0.15.1" },
+    { "type": "library", "name": "inspector", "purl": "pkg:npm/%40modelcontextprotocol/inspector@0.13.0" },
+    { "type": "library", "name": "flowise", "purl": "pkg:npm/flowise@2.2.0" }
+  ]
+}

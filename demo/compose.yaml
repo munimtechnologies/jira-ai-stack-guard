@@ -1,0 +1,21 @@
+# Demo stack for AI Stack Guard (deliberately outdated pins). Attach this file to a Jira issue labelled ai-stack.
+services:
+  ollama:
+    image: ollama/ollama:0.33.1
+    volumes:
+      - ollama:/root/.ollama
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:v0.11.2
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    ports:
+      - "3000:8080"
+  vllm:
+    image: vllm/vllm-openai:v0.30.0
+    command: ["--model", "Qwen/Qwen3-8B"]
+  litellm:
+    image: ghcr.io/berriai/litellm:main-v1.74.0-stable
+  n8n:
+    image: n8nio/n8n:latest
+volumes:
+  ollama: {}

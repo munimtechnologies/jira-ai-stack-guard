@@ -1,0 +1,163 @@
+# AI Stack Guard for Jira (Apache-2.0). Made by MV2 of Munim, Inc. with AI agents.
+# app.id is a placeholder: `forge register` replaces it with the real app ID.
+modules:
+  rovo:agent:
+    - key: ai-stack-guard-agent
+      name: AI Stack Guard
+      description: Checks the self-hosted AI apps your team runs (Ollama, Open WebUI, vLLM, LiteLLM, n8n, Dify, Langflow, Flowise and more) against curated security advisories, including ones with no CVE ID, and opens upgrade tasks.
+      prompt: |
+        You are AI Stack Guard. You help software and platform teams keep their self-hosted AI apps
+        (Ollama, Open WebUI, vLLM, LiteLLM, n8n, Dify, Langflow, Flowise, RAGFlow, AnythingLLM,
+        MCP Inspector) free of known security advisories.
+
+        How you work:
+        - A Jira issue describes one AI deployment when it has a compose file, Dockerfile,
+          requirements file, package.json or CycloneDX SBOM attached, or pasted into a code block
+          in its description. Teams label these issues "ai-stack".
+        - To check the current issue or one the user names, use the scan-issue action.
+        - To answer "is <product> <version> safe?", use the check-component action. Pass the
+          platform (linux, docker or windows) if the user says it.
+        - To review every AI deployment in a project, use the scan-project action.
+        - Only when the user asks you to file, record or act on the findings, use the
+          file-findings action. It comments on the issue and opens one upgrade task per affected
+          component.
+
+        How you answer:
+        - Lead with the decision: which components are affected and the version to update to.
+        - Order by severity (critical, high, moderate, low). Give advisory IDs with their links.
+        - Say clearly when an advisory only matters if an optional feature is used, when it has
+          no fixed release yet (then point to the advisory's mitigations), and when a version
+          range was checked at its lowest allowed version.
+        - Say when an advisory was not in public databases such as OSV when it was checked:
+          ordinary dependency scanners may miss those.
+        - If a component has no exact version (for example the "latest" tag), say it cannot be
+          checked and recommend pinning a version.
+        - Never claim a component is safe beyond "no known advisories in the curated list as of
+          <date>". Never invent advisories, versions or fixes; use only what the actions return.
+        - Keep answers short and practical.
+      conversationStarters:
+        - Is the AI stack on this issue affected by any known advisories?
+        - Which AI deployments in this project need updates?
+        - Is Ollama 0.33.1 safe to run?
+        - Comment the findings and open upgrade tasks for this issue
+      actions:
+        - scan-issue
+        - check-component
+        - scan-project
+        - file-findings
+  rovo:mcp:
+    - key: ai-stack-guard-mcp
+      name: AI Stack Guard
+      tools:
+        - scan-issue
+        - check-component
+        - scan-project
+  action:
+    - key: scan-issue
+      name: Scan an issue's AI stack
+      function: scan-issue-fn
+      actionVerb: GET
+      description: |
+        Reads the compose files, Dockerfiles, requirements files, package.json files and CycloneDX
+        SBOMs attached to a Jira issue or pasted into code blocks in its description, finds the
+        self-hosted AI apps and their pinned versions, and returns the known security advisories
+        that affect each one with the version to update to. Uses the current issue when no key is given.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: false
+          description: The Jira issue key, for example OPS-12. Leave empty to use the current issue.
+    - key: check-component
+      name: Check an AI component version
+      function: check-component-fn
+      actionVerb: GET
+      description: |
+        Checks one self-hosted AI product and version (for example Ollama 0.33.1, Open WebUI 0.11.2,
+        vLLM 0.30.0, LiteLLM 1.74.0, n8n 1.110.0) against the curated advisory list and returns the
+        advisories that affect it and the version to update to.
+      inputs:
+        product:
+          title: Product
+          type: string
+          required: true
+          description: Product name, Docker image or package name, for example "Ollama", "open-webui" or "vllm/vllm-openai".
+        version:
+          title: Version
+          type: string
+          required: false
+          description: The exact version, for example 0.33.1. Leave empty if unknown.
+        platform:
+          title: Platform
+          type: string
+          required: false
+          description: linux, docker or windows, if known. Windows-only advisories are skipped for linux and docker.
+    - key: scan-project
+      name: Scan a project's AI deployments
+      function: scan-project-fn
+      actionVerb: GET
+      description: |
+        Scans every issue labelled "ai-stack" in a Jira project (up to 25, most recently updated
+        first) and summarises which AI components are affected by known advisories and what to
+        update them to. Uses the current project when no key is given.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: The Jira project key, for example OPS. Leave empty to use the current project.
+    - key: file-findings
+      name: File AI stack findings
+      function: file-findings-fn
+      actionVerb: CREATE
+      description: |
+        Scans a Jira issue's AI stack, posts the findings as a comment on it, and creates one linked
+        upgrade task (label "ai-stack-guard") for each affected component that has no task yet.
+        Use only when the user asks to file or act on the findings.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: false
+          description: The Jira issue key, for example OPS-12. Leave empty to use the current issue.
+  jira:issuePanel:
+    - key: ai-stack-guard-panel
+      resource: panel
+      resolver:
+        function: panel-resolver-fn
+      render: native
+      title: AI Stack Guard
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+  scheduledTrigger:
+    - key: ai-stack-guard-daily
+      function: daily-check-fn
+      interval: day
+  function:
+    - key: scan-issue-fn
+      handler: index.scanIssue
+    - key: check-component-fn
+      handler: index.checkComponent
+    - key: scan-project-fn
+      handler: index.scanProject
+    - key: file-findings-fn
+      handler: index.fileFindings
+    - key: daily-check-fn
+      handler: index.dailyCheck
+    - key: panel-resolver-fn
+      handler: index.panelResolver
+resources:
+  - key: panel
+    path: src/frontend/index.jsx
+permissions:
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - storage:app
+  external:
+    fetch:
+      backend:
+        - https://raw.githubusercontent.com
+app:
+  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000
+  runtime:
+    name: nodejs22.x
