@@ -1,0 +1,10 @@
+AI Stack Guard for Jira keeps the AI apps your team hosts itself patched, from inside Jira.
+Teams now run Ollama, vLLM, Open WebUI and LiteLLM next to their other services, and these projects publish security advisories almost every week.
+Many of those advisories have no CVE number and never reach the databases that dependency scanners read, so the usual tools stay silent.
+Your team already writes its deployments down. Here is a Jira issue for a production AI stack, with its compose file, requirements and SBOM attached.
+The AI Stack Guard panel reads those version pins and lists every affected component, its advisories by severity, and the version to update to.
+One click comments the findings and opens a linked upgrade task for each component, so the fix is planned work, not a forgotten alert.
+The Rovo agent answers the same questions in plain language, across a whole project, and files findings only when you ask.
+Through the Atlassian MCP server, outside agents like Claude can ask too, with the user's own Jira permissions, guided by an open agent skill.
+Every day it checks again, and comments only when a new advisory appears, so nobody has to remember to rescan.
+AI Stack Guard is open source under Apache 2.0, built by MV2 of Munim, Inc. with AI agents. Thanks for watching.

@@ -1,6 +1,6 @@
 {
   "name": "jira-ai-stack-guard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Forge app for Jira: checks self-hosted AI apps (Ollama, Open WebUI, vLLM, LiteLLM, n8n, Dify, Langflow, Flowise...) against curated security advisories, with a Rovo agent, MCP tools, an issue panel and a daily check. By MV2 of Munim, Inc., made with AI agents.",
   "license": "Apache-2.0",
   "author": "MV2, Munim, Inc. <mv2@munimtech.com>",

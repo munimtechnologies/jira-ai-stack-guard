@@ -76,7 +76,9 @@ async function issueSources(issueKey, as) {
   for (const att of issue.fields.attachment || []) {
     const kind = fileKind(att.filename);
     if (!kind || att.size > MAX_ATTACHMENT_BYTES) continue;
-    const res = await requester(as).requestJira(route`/rest/api/3/attachment/content/${att.id}`);
+    // redirect=false: Jira Cloud otherwise answers 303 to the media host (api.media.atlassian.com),
+    // which is outside this app's egress list. With it, the bytes come straight from the Jira API.
+    const res = await requester(as).requestJira(route`/rest/api/3/attachment/content/${att.id}?redirect=false`);
     if (!res.ok) {
       console.warn(`Attachment ${att.id} on ${issueKey}: HTTP ${res.status}`);
       continue;

@@ -6,9 +6,9 @@ advisories, then turns the results into Jira work.
 Covered apps: Ollama, Open WebUI, vLLM, LiteLLM, n8n, Dify, Langflow, Flowise, RAGFlow,
 AnythingLLM, ComfyUI and MCP Inspector.
 
-**Status: v0.1.0, in development.** The unit tests are written but their first run is still
-pending. It has not been deployed to a Jira site yet. It is MV2 of Munim, Inc.'s entry for Atlassian's Codegeist 2026, in the category
-Apps for Software Teams. Made with AI agents. Licence: Apache-2.0.
+**Status: v0.1.1, in development.** It has not been deployed to a Jira site yet, and the first run of
+its unit tests is still pending. It is MV2 of Munim, Inc.'s entry for Atlassian's Codegeist 2026, in the
+category Apps for Software Teams. Made with AI agents. Licence: Apache-2.0.
 
 ## Why
 
@@ -53,10 +53,27 @@ curated, openly licensed feed kept by MV2 of Munim, Inc. For each advisory the f
   advisories it has not reported before, and opens upgrade tasks for them. Nobody has to remember
   to re-scan when a new advisory comes out.
 
+## Agent skill
+
+[`skills/ai-stack-guard/SKILL.md`](skills/ai-stack-guard/SKILL.md) tells coding agents (Claude Code,
+Codex, Cursor and others) when to use these tools and how to read their answers. It also gives a local
+route that needs no Jira: the feed's standard-library scanner, `scan_stack.py`. To add it to an agent:
+
+```
+npx skills add munimtechnologies/jira-ai-stack-guard
+```
+
+To connect an outside MCP client to the Jira tools:
+1. A site admin turns the app's tools on under Atlassian Administration > Apps > Sites > *site* >
+   Connected apps.
+2. Add `https://mcp.atlassian.com/forge/<appId>` to the client as a remote MCP server. The app ID
+   will be listed here once the app is registered.
+
 ## Privacy and data flow
 
 - It reads only the Jira issues it is pointed at, with the permissions of the user or the app.
 - It never connects to your servers. It only reads the version pins written on the issue.
+- Attachments are read straight from the Jira API (`?redirect=false`), not through the media host.
 - The one outbound request fetches the public advisory feed from `raw.githubusercontent.com`,
   cached for six hours. No Jira data leaves Atlassian.
 - Forge storage holds the cached feed, the advisories already reported for each issue, and the
@@ -78,14 +95,19 @@ npm run smoke -- out    # checks the demo files against the live feed
 python -m unittest test_forge_app_static.py
 ```
 
-To deploy, you need an Atlassian developer site (free) and the Forge CLI (`npm i -g @forge/cli`):
+To deploy, you need an Atlassian account and the Forge CLI (`npm i -g @forge/cli`). Rovo is not
+available on free developer sites, so use a Forge demo site (90 days, includes Rovo) to try the agent:
 
 ```
 forge login
 forge register          # replaces the placeholder app.id in manifest.yml
 forge deploy
-forge install --product jira --site <your-site>.atlassian.net
+forge site provision    # one demo site per developer, with Jira and Rovo
+forge install --demo-site --product jira
 ```
+
+On a standard developer site, use `forge install --product jira --site <your-site>.atlassian.net`
+instead. The panel, MCP tools and daily check work there too; only the Rovo agent needs Rovo.
 
 ## Layout
 
@@ -96,6 +118,8 @@ forge install --product jira --site <your-site>.atlassian.net
 - `src/index.js` holds the Forge functions: the Rovo actions and MCP tools, the daily check, and
   the panel resolver.
 - `src/frontend/index.jsx` is the issue panel, written in UI Kit.
+- `skills/ai-stack-guard/SKILL.md` is the agent skill.
+- `docs/` has the demo script and narration.
 - `test/` has the Node unit tests and a small fixture feed.
 
 ## Limits
